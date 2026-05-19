@@ -3,7 +3,7 @@ import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   POWERUP_COLORS,
-  POWERUP_LABELS,
+  POWERUP_ICONS,
 } from "./constants";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -120,15 +120,16 @@ function drawBricks(ctx: CanvasRenderingContext2D, state: GameState): void {
     roundRect(ctx, x + 2, y + 2, w - 4, 3, 2);
     ctx.fill();
 
-    // Power-up dot
+    // Power-up hint
     if (brick.powerUp) {
       const dotColor = POWERUP_COLORS[brick.powerUp] ?? "#fff";
       ctx.fillStyle = dotColor;
       ctx.shadowColor = dotColor;
-      ctx.shadowBlur = 7;
-      ctx.beginPath();
-      ctx.arc(x + w / 2, y + h / 2, 3, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.shadowBlur = 6;
+      ctx.font = 'bold 8px "Space Grotesk", sans-serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(";)", x + w / 2, y + h / 2);
     }
 
     ctx.restore();
@@ -225,32 +226,45 @@ function drawDroppingPowerUps(
 ): void {
   for (const pu of state.droppingPowerUps) {
     const color = POWERUP_COLORS[pu.type] ?? "#fff";
-    const label = POWERUP_LABELS[pu.type] ?? "?";
-    const pw = 50,
-      ph = 22;
+    const icon = POWERUP_ICONS[pu.type] ?? "?";
+    const cr = 14; // circle radius
 
     ctx.save();
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 16;
 
-    const grad = ctx.createLinearGradient(
-      pu.x - pw / 2,
-      pu.y - ph / 2,
-      pu.x - pw / 2,
-      pu.y + ph / 2,
+    // Outer glow
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 14;
+
+    // Circle background gradient
+    const grad = ctx.createRadialGradient(
+      pu.x - cr * 0.3,
+      pu.y - cr * 0.35,
+      0,
+      pu.x,
+      pu.y,
+      cr,
     );
-    grad.addColorStop(0, hexToRgba(color, 0.95));
-    grad.addColorStop(1, hexToRgba(color, 0.6));
+    grad.addColorStop(0, hexToRgba(color, 1));
+    grad.addColorStop(1, hexToRgba(color, 0.55));
     ctx.fillStyle = grad;
-    roundRect(ctx, pu.x - pw / 2, pu.y - ph / 2, pw, ph, 11);
+    ctx.beginPath();
+    ctx.arc(pu.x, pu.y, cr, 0, Math.PI * 2);
     ctx.fill();
 
+    // Subtle inner ring
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#000";
-    ctx.font = 'bold 11px "Space Grotesk", sans-serif';
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(pu.x, pu.y, cr - 1, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Icon inside circle
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 10px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, pu.x, pu.y);
+    ctx.fillText(icon, pu.x, pu.y);
 
     ctx.restore();
   }

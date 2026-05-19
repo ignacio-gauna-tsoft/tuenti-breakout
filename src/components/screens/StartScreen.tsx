@@ -1,5 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { QRCodeSVG } from "qrcode.react";
+
+const SHARE_URL = "https://ignacio-gauna-tsoft.github.io/tuenti-breakout/";
 
 interface Props {
   highScore: number;
@@ -12,6 +15,7 @@ export function StartScreen({ highScore, onStart }: Props) {
   const subtitleRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -96,7 +100,54 @@ export function StartScreen({ highScore, onStart }: Props) {
         <button className="start-cta" ref={ctaRef} onClick={handleStart}>
           JUGAR
         </button>
+
+        <button className="start-share-btn" onClick={() => setShowShare(true)}>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          Compartir
+        </button>
       </div>
+
+      {/* Share modal */}
+      {showShare && (
+        <div className="share-backdrop" onClick={() => setShowShare(false)}>
+          <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="share-modal-close"
+              onClick={() => setShowShare(false)}
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+            <h2 className="share-modal-title">¡Compartí el juego!</h2>
+            <p className="share-modal-subtitle">Escaneá el QR para jugar</p>
+            <div className="share-modal-qr">
+              <QRCodeSVG
+                value={SHARE_URL}
+                size={200}
+                bgColor="transparent"
+                fgColor="#ffffff"
+                level="M"
+              />
+            </div>
+            <p className="share-modal-url">{SHARE_URL}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

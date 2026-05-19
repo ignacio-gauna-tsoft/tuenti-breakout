@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GameEngine } from "../game/engine";
 import { renderGame } from "../game/renderer";
-import type { InputState, GamePhase, ActiveEffect } from "../game/types";
+import type {
+  InputState,
+  GamePhase,
+  ActiveEffect,
+  PowerUpType,
+} from "../game/types";
 import { CANVAS_WIDTH } from "../game/constants";
+
+export interface PowerUpToast {
+  id: number;
+  type: PowerUpType;
+}
 
 export interface GameUIState {
   phase: GamePhase;
@@ -37,6 +47,12 @@ export function useBreakoutGame(
   const pointerDown = useRef(false);
 
   const [uiState, setUiState] = useState<GameUIState>(INITIAL_UI);
+  const [toasts, setToasts] = useState<PowerUpToast[]>([]);
+  // Maps type → last known collectedAt timestamp (detects re-collections)
+  const prevCollectedAtRef = useRef<Map<PowerUpType, number>>(new Map());
+  // Tracks which powerup types currently have a visible toast (prevents spam)
+  const visibleToastTypesRef = useRef<Set<PowerUpType>>(new Set());
+  const toastIdRef = useRef(0);
 
   // ─── Start / restart ────────────────────────────────────────────────────────
   const startGame = useCallback((level = 1) => {
@@ -72,6 +88,30 @@ export function useBreakoutGame(
 
           const { phase, score, lives, level, highScore, activeEffects } =
             engine.state;
+
+          // Detect powerup collections via collectedAt changes
+          for (const eff of activeEffects) {
+            const prev = prevCollectedAtRef.current.get(eff.type);
+            if (prev !== eff.collectedAt) {
+              // New or re-collection — only show if no toast for this type is visible
+              if (!visibleToastTypesRef.current.has(eff.type)) {
+                const id = toastIdRef.current++;
+                visibleToastTypesRef.current.add(eff.type);
+                setToasts((t) => [...t, { id, type: eff.type }]);
+                setTimeout(() => {
+                  visibleToastTypesRef.current.delete(eff.type);
+                  setToasts((t) => t.filter((x) => x.id !== id));
+                }, 2200);
+              }
+              prevCollectedAtRef.current.set(eff.type, eff.collectedAt);
+            }
+          }
+          // Clean up expired effects from the tracking map
+          const activeTypes = new Set(activeEffects.map((e) => e.type));
+          prevCollectedAtRef.current.forEach((_, type) => {
+            if (!activeTypes.has(type)) prevCollectedAtRef.current.delete(type);
+          });
+
           setUiState((prev) => {
             if (
               prev.phase !== phase ||
@@ -98,10 +138,16 @@ export function useBreakoutGame(
   // ─── Keyboard ───────────────────────────────────────────────────────────────
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A")
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
         inputRef.current.left = true;
-      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D")
+        inputRef.current.pointerX = null;
+        pointerDown.current = false; // prevent mousemove from overriding keyboard
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
         inputRef.current.right = true;
+        inputRef.current.pointerX = null;
+        pointerDown.current = false; // prevent mousemove from overriding keyboard
+      }
       if (e.key === " " && !spaceHeld.current) {
         inputRef.current.spaceJustPressed = true;
         spaceHeld.current = true;
@@ -145,6 +191,7 @@ export function useBreakoutGame(
     };
     const onMouseUp = () => {
       pointerDown.current = false;
+      inputRef.current.pointerX = null; // release mouse control so keyboard can resume
     };
 
     const onTouchStart = (e: TouchEvent) => {
@@ -179,5 +226,5 @@ export function useBreakoutGame(
     };
   }, [canvasRef]);
 
-  return { uiState, startGame };
+  return { uiState, startGame, toasts };
 }

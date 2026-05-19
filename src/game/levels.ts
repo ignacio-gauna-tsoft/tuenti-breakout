@@ -11,12 +11,7 @@ import {
   BRICK_POINTS,
 } from "./constants";
 
-const POWERUP_POOL: PowerUpType[] = [
-  "wide_paddle",
-  "double_ball",
-  "slow_ball",
-  "fireball",
-];
+const POWERUP_POOL: PowerUpType[] = ["wide_paddle", "double_ball", "fireball"];
 
 // 0 = empty, 1 = 1 hit, 2 = 2 hits, 3 = 3 hits
 const LEVEL_LAYOUTS: number[][][] = [

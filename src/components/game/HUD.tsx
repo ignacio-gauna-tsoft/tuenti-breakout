@@ -1,9 +1,4 @@
 import type { ActiveEffect } from "../../game/types";
-import {
-  POWERUP_COLORS,
-  POWERUP_LABELS,
-  POWERUP_DURATION_MS,
-} from "../../game/constants";
 
 interface Props {
   lives: number;
@@ -13,7 +8,7 @@ interface Props {
   activeEffects: ActiveEffect[];
 }
 
-export function HUD({ lives, score, level, highScore, activeEffects }: Props) {
+export function HUD({ lives, score, level, highScore }: Props) {
   return (
     <div className="hud">
       <div className="hud-top">
@@ -41,33 +36,6 @@ export function HUD({ lives, score, level, highScore, activeEffects }: Props) {
           </span>
         </div>
       </div>
-
-      {activeEffects.length > 0 && (
-        <div className="hud-effects">
-          {activeEffects.map((eff) => {
-            const now = performance.now();
-            const ratio = Math.max(
-              0,
-              (eff.expiresAt - now) / POWERUP_DURATION_MS,
-            );
-            const color = POWERUP_COLORS[eff.type] ?? "#fff";
-            const label = POWERUP_LABELS[eff.type] ?? "?";
-            return (
-              <div key={eff.type} className="hud-effect-chip">
-                <span className="hud-effect-label" style={{ color }}>
-                  {label}
-                </span>
-                <div className="hud-effect-bar-bg">
-                  <div
-                    className="hud-effect-bar"
-                    style={{ width: `${ratio * 100}%`, background: color }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

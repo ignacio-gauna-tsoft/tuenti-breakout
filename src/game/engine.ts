@@ -376,6 +376,7 @@ export class GameEngine {
     this.state.activeEffects.push({
       type,
       expiresAt: now + POWERUP_DURATION_MS,
+      collectedAt: now,
     });
 
     switch (type) {
@@ -400,18 +401,6 @@ export class GameEngine {
         }
         break;
 
-      case "slow_ball": {
-        const targetSpeed = speedForLevel(this.state.level) * 0.6;
-        this.state.balls.forEach((b) => {
-          const s = Math.sqrt(b.vx ** 2 + b.vy ** 2);
-          if (s > 0) {
-            b.vx = (b.vx / s) * targetSpeed;
-            b.vy = (b.vy / s) * targetSpeed;
-          }
-        });
-        break;
-      }
-
       case "fireball":
         this.state.balls.forEach((b) => {
           b.fireball = true;
@@ -433,17 +422,6 @@ export class GameEngine {
             b.fireball = false;
           });
           break;
-        case "slow_ball": {
-          const targetSpeed = speedForLevel(this.state.level);
-          this.state.balls.forEach((b) => {
-            const s = Math.sqrt(b.vx ** 2 + b.vy ** 2);
-            if (s > 0 && s < targetSpeed * 0.85) {
-              b.vx = (b.vx / s) * targetSpeed;
-              b.vy = (b.vy / s) * targetSpeed;
-            }
-          });
-          break;
-        }
         case "double_ball":
           // Balls remain, effect just expires
           break;

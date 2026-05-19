@@ -37,15 +37,21 @@ export const BRICK_ROW_COLORS = [
 ];
 
 export const POWERUP_COLORS: Record<string, string> = {
-  wide_paddle: "#00D4FF",
-  double_ball: "#FFD600",
-  slow_ball: "#00E5A0",
-  fireball: "#FF6B35",
+  wide_paddle: "#E91E8C",
+  double_ball: "#00D4FF",
+  fireball: "#9C5FD4",
 };
 
+// Labels with \n for two-line rendering (canvas and React)
 export const POWERUP_LABELS: Record<string, string> = {
-  wide_paddle: "WIDE",
-  double_ball: "x2",
-  slow_ball: "SLOW",
-  fireball: "FIRE",
+  wide_paddle: "Continuidad\nOperativa",
+  double_ball: "Captura\nde Valor",
+  fireball: "Transformación",
+};
+
+// Unicode icons rendered inside the circle badge
+export const POWERUP_ICONS: Record<string, string> = {
+  wide_paddle: "▶▶",
+  double_ball: "★",
+  fireball: "↻",
 };

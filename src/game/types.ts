@@ -34,11 +34,7 @@ export interface Brick {
   alive: boolean;
 }
 
-export type PowerUpType =
-  | "wide_paddle"
-  | "double_ball"
-  | "slow_ball"
-  | "fireball";
+export type PowerUpType = "wide_paddle" | "double_ball" | "fireball";
 
 export interface DroppingPowerUp {
   id: number;
@@ -51,6 +47,7 @@ export interface DroppingPowerUp {
 export interface ActiveEffect {
   type: PowerUpType;
   expiresAt: number;
+  collectedAt: number;
 }
 
 export interface Particle {

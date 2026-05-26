@@ -20,6 +20,8 @@ import {
   PADDLE_SPEED,
   POWERUP_DURATION_MS,
   POWERUP_FALL_SPEED,
+  POWERUP_COLORS,
+  createPowerUpCountMap,
 } from "./constants";
 import { createBricks } from "./levels";
 import { soundEngine } from "./sound";
@@ -71,6 +73,11 @@ export class GameEngine {
       level,
       frame: 0,
       _nextId: idCounter.value,
+      powerUpsCaught: 0,
+      powerUpsMissed: 0,
+      bricksBroken: 0,
+      powerUpsCaughtMap: createPowerUpCountMap(),
+      powerUpsMissedMap: createPowerUpCountMap(),
     };
   }
 
@@ -258,6 +265,7 @@ export class GameEngine {
 
       if (brick.hitsLeft <= 0) {
         brick.alive = false;
+        this.state.bricksBroken++;
         this.state.score += brick.points;
         if (this.state.score > this.state.highScore) {
           this.state.highScore = this.state.score;
@@ -358,6 +366,8 @@ export class GameEngine {
         this.spawnCollectParticles(pu.x, pu.y, pu.type);
       } else if (pu.y > CANVAS_HEIGHT + 30) {
         gone.push(pu.id);
+        this.state.powerUpsMissed++;
+        this.state.powerUpsMissedMap[pu.type]++;
       }
     }
 
@@ -368,6 +378,8 @@ export class GameEngine {
 
   private applyPowerUp(type: PowerUpType, now: number): void {
     soundEngine.powerUpCollect();
+    this.state.powerUpsCaught++;
+    this.state.powerUpsCaughtMap[type]++;
 
     // Refresh or add effect
     this.state.activeEffects = this.state.activeEffects.filter(
@@ -380,11 +392,13 @@ export class GameEngine {
     });
 
     switch (type) {
-      case "wide_paddle":
+      case "equipazo":
+      case "todo_terreno":
         this.state.paddle.width = this.state.paddle.baseWidth * 1.7;
         break;
 
-      case "double_ball":
+      case "fan_cliente":
+      case "dejamos_huella":
         if (this.state.balls.length < 4) {
           const src = this.state.balls[0];
           if (src) {
@@ -401,7 +415,7 @@ export class GameEngine {
         }
         break;
 
-      case "fireball":
+      case "valentia":
         this.state.balls.forEach((b) => {
           b.fireball = true;
         });
@@ -414,15 +428,17 @@ export class GameEngine {
       if (now < eff.expiresAt) continue;
 
       switch (eff.type) {
-        case "wide_paddle":
+        case "equipazo":
+        case "todo_terreno":
           this.state.paddle.width = this.state.paddle.baseWidth;
           break;
-        case "fireball":
+        case "valentia":
           this.state.balls.forEach((b) => {
             b.fireball = false;
           });
           break;
-        case "double_ball":
+        case "fan_cliente":
+        case "dejamos_huella":
           // Balls remain, effect just expires
           break;
       }
@@ -476,13 +492,7 @@ export class GameEngine {
   }
 
   private spawnCollectParticles(x: number, y: number, type: PowerUpType): void {
-    const colors: Record<PowerUpType, string> = {
-      wide_paddle: "#00D4FF",
-      double_ball: "#FFD600",
-      slow_ball: "#00E5A0",
-      fireball: "#FF6B35",
-    };
-    const color = colors[type];
+    const color = POWERUP_COLORS[type];
 
     for (let i = 0; i < 20; i++) {
       const angle = (Math.PI * 2 * i) / 20;

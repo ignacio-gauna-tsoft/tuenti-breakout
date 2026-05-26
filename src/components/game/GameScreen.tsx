@@ -1,21 +1,26 @@
-import { useEffect, useRef } from "react";
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from "../../game/constants";
+import { useEffect, useRef, type CSSProperties } from "react";
 import {
+  BACKGROUND_IMAGE,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
   POWERUP_COLORS,
-  POWERUP_ICONS,
+  POWERUP_IMAGES,
   POWERUP_LABELS,
 } from "../../game/constants";
 import { useBreakoutGame } from "../../hooks/useBreakoutGame";
 import { HUD } from "./HUD";
+import { PauseScreen } from "./PauseScreen";
 import { GameOverScreen } from "../screens/GameOverScreen";
 
 interface Props {
   onGoToMenu: () => void;
+  playerName: string;
 }
 
-export function GameScreen({ onGoToMenu }: Props) {
+export function GameScreen({ onGoToMenu, playerName }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { uiState, startGame, toasts } = useBreakoutGame(canvasRef);
+  const { uiState, startGame, toasts, isPaused, resumeGame, togglePause } =
+    useBreakoutGame(canvasRef);
 
   // Auto-start when component mounts
   useEffect(() => {
@@ -24,15 +29,25 @@ export function GameScreen({ onGoToMenu }: Props) {
 
   const isNewHighScore =
     uiState.score > 0 && uiState.score >= uiState.highScore;
+  const gameStats = {
+    powerUpsCaughtMap: uiState.powerUpsCaughtMap,
+    powerUpsMissedMap: uiState.powerUpsMissedMap,
+    bricksBroken: uiState.bricksBroken,
+    bricksRemaining: uiState.bricksRemaining,
+  };
 
   return (
-    <div className="game-screen">
+    <div
+      className="game-screen"
+      style={
+        { "--game-background-image": `url("${BACKGROUND_IMAGE}")` } as CSSProperties
+      }
+    >
       <HUD
         lives={uiState.lives}
         score={uiState.score}
         level={uiState.level}
         highScore={uiState.highScore}
-        activeEffects={uiState.activeEffects}
       />
 
       <div className="canvas-area">
@@ -44,20 +59,44 @@ export function GameScreen({ onGoToMenu }: Props) {
             className="game-canvas"
           />
 
+          {uiState.phase !== "gameover" && (
+            <button
+              type="button"
+              className="pause-toggle-btn"
+              onClick={togglePause}
+            >
+              {isPaused ? "SEGUIR" : "PAUSA"}
+            </button>
+          )}
+
           {/* Floating powerup toasts */}
           <div className="powerup-toasts">
             {toasts.map((toast) => {
               const color = POWERUP_COLORS[toast.type] ?? "#fff";
-              const icon = POWERUP_ICONS[toast.type] ?? "?";
+              const image = POWERUP_IMAGES[toast.type];
               const label = POWERUP_LABELS[toast.type] ?? "?";
               const lines = label.split("\n");
+              const pulseClass =
+                toast.pulseKey > 0
+                  ? `powerup-toast--pulse-${toast.pulseKey % 2}`
+                  : "";
               return (
                 <div
                   key={toast.id}
-                  className="powerup-toast"
-                  style={{ "--toast-color": color } as React.CSSProperties}
+                  className={[
+                    "powerup-toast",
+                    pulseClass,
+                    toast.closing ? "powerup-toast--closing" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  style={{ "--toast-color": color } as CSSProperties}
                 >
-                  <span className="powerup-toast-icon">{icon}</span>
+                  <img
+                    src={image}
+                    alt={lines.join(" ")}
+                    className="powerup-toast-img"
+                  />
                   <span className="powerup-toast-name">
                     {lines.map((line, i) => (
                       <span key={i} className="powerup-toast-line">
@@ -65,10 +104,24 @@ export function GameScreen({ onGoToMenu }: Props) {
                       </span>
                     ))}
                   </span>
+                  {toast.count > 1 && (
+                    <span className="powerup-toast-count">x{toast.count}</span>
+                  )}
                 </div>
               );
             })}
           </div>
+
+          {isPaused && uiState.phase !== "gameover" && (
+            <PauseScreen
+              score={uiState.score}
+              highScore={uiState.highScore}
+              level={uiState.level}
+              stats={gameStats}
+              onResume={resumeGame}
+              onGoToMenu={onGoToMenu}
+            />
+          )}
 
           {uiState.phase === "gameover" && (
             <GameOverScreen
@@ -77,6 +130,9 @@ export function GameScreen({ onGoToMenu }: Props) {
               isNewHighScore={isNewHighScore}
               onPlayAgain={() => startGame(1)}
               onGoToMenu={onGoToMenu}
+              playerName={playerName}
+              level={uiState.level}
+              stats={gameStats}
             />
           )}
         </div>

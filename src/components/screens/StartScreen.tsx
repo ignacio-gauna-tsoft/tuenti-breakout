@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import gsap from "gsap";
 import { QRCodeSVG } from "qrcode.react";
+import { BACKGROUND_IMAGE } from "../../game/constants";
 
 const SHARE_URL = "https://ignacio-gauna-tsoft.github.io/tuenti-breakout/";
 
 interface Props {
   highScore: number;
-  onStart: () => void;
+  onStart: (name: string) => void;
 }
 
 export function StartScreen({ highScore, onStart }: Props) {
@@ -16,6 +17,7 @@ export function StartScreen({ highScore, onStart }: Props) {
   const infoRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const [showShare, setShowShare] = useState(false);
+  const [name, setName] = useState("");
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -45,7 +47,6 @@ export function StartScreen({ highScore, onStart }: Props) {
           "-=0.1",
         );
 
-      // Pulsing CTA
       gsap.to(ctaRef.current, {
         scale: 1.04,
         duration: 0.9,
@@ -60,29 +61,33 @@ export function StartScreen({ highScore, onStart }: Props) {
   }, []);
 
   const handleStart = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
     gsap.to(rootRef.current, {
       opacity: 0,
       scale: 1.06,
       duration: 0.35,
       ease: "power2.in",
-      onComplete: onStart,
+      onComplete: () => onStart(trimmed),
     });
   };
 
   return (
-    <div className="start-screen" ref={rootRef}>
-      {/* Animated background blobs */}
-      <div className="start-bg-blob start-bg-blob--1" />
-      <div className="start-bg-blob start-bg-blob--2" />
-
+    <div
+      className="start-screen"
+      ref={rootRef}
+      style={
+        { "--start-background-image": `url("${BACKGROUND_IMAGE}")` } as CSSProperties
+      }
+    >
       <div className="start-content">
         <div className="start-logo" ref={logoRef}>
-          <span className="start-logo-t">T</span>
-          <span className="start-logo-uenti">uenti</span>
+          <span className="start-logo-supernova">Supernova</span>
         </div>
 
         <div className="start-subtitle" ref={subtitleRef}>
-          <span className="start-subtitle-text">BREAKOUT</span>
+          <span className="start-subtitle-text">conecta sin limites</span>
         </div>
 
         <div className="start-info" ref={infoRef}>
@@ -92,12 +97,38 @@ export function StartScreen({ highScore, onStart }: Props) {
             </p>
           )}
           <div className="start-controls">
-            <span>← → / A D &nbsp;·&nbsp; Mover paleta</span>
-            <span>SPACE / TAP &nbsp;·&nbsp; Lanzar pelota</span>
+            <span className="desktop-instruction">
+              &larr; &rarr; / A D &nbsp;&middot;&nbsp; Mover paleta
+            </span>
+            <span className="desktop-instruction">
+              SPACE / TAP &nbsp;&middot;&nbsp; Lanzar pelota
+            </span>
+            <span className="mobile-instruction">Desliza para mover</span>
+            <span className="mobile-instruction">
+              Toca y arrastra para lanzar
+            </span>
           </div>
         </div>
 
-        <button className="start-cta" ref={ctaRef} onClick={handleStart}>
+        <div className="start-name-field">
+          <input
+            className="start-name-input"
+            type="text"
+            placeholder="Tu nombre o nick"
+            maxLength={20}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleStart()}
+            aria-label="Nombre del jugador"
+          />
+        </div>
+
+        <button
+          className="start-cta"
+          ref={ctaRef}
+          onClick={handleStart}
+          disabled={!name.trim()}
+        >
           JUGAR
         </button>
 
@@ -122,7 +153,6 @@ export function StartScreen({ highScore, onStart }: Props) {
         </button>
       </div>
 
-      {/* Share modal */}
       {showShare && (
         <div className="share-backdrop" onClick={() => setShowShare(false)}>
           <div className="share-modal" onClick={(e) => e.stopPropagation()}>
@@ -131,10 +161,10 @@ export function StartScreen({ highScore, onStart }: Props) {
               onClick={() => setShowShare(false)}
               aria-label="Cerrar"
             >
-              ✕
+              x
             </button>
-            <h2 className="share-modal-title">¡Compartí el juego!</h2>
-            <p className="share-modal-subtitle">Escaneá el QR para jugar</p>
+            <h2 className="share-modal-title">Compartir juego</h2>
+            <p className="share-modal-subtitle">Escanea el QR para jugar</p>
             <div className="share-modal-qr">
               <QRCodeSVG
                 value={SHARE_URL}

@@ -1,11 +1,8 @@
-import type { ActiveEffect } from "../../game/types";
-
 interface Props {
   lives: number;
   score: number;
   level: number;
   highScore: number;
-  activeEffects: ActiveEffect[];
 }
 
 export function HUD({ lives, score, level, highScore }: Props) {
@@ -18,7 +15,7 @@ export function HUD({ lives, score, level, highScore }: Props) {
               key={i}
               className={`hud-heart ${i < lives ? "hud-heart--alive" : "hud-heart--lost"}`}
             >
-              ♥
+              &hearts;
             </span>
           ))}
         </div>

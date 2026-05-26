@@ -34,7 +34,12 @@ export interface Brick {
   alive: boolean;
 }
 
-export type PowerUpType = "wide_paddle" | "double_ball" | "fireball";
+export type PowerUpType =
+  | "valentia"
+  | "fan_cliente"
+  | "equipazo"
+  | "todo_terreno"
+  | "dejamos_huella";
 
 export interface DroppingPowerUp {
   id: number;
@@ -83,4 +88,11 @@ export interface GameState {
   level: number;
   frame: number;
   _nextId: number;
+  // Session stats (cumulative across levels)
+  powerUpsCaught: number;
+  powerUpsMissed: number;
+  bricksBroken: number;
+  // Per-type breakdowns for the end-of-game summary
+  powerUpsCaughtMap: Record<PowerUpType, number>;
+  powerUpsMissedMap: Record<PowerUpType, number>;
 }

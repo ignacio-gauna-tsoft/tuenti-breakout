@@ -9,9 +9,8 @@ import {
   BRICK_OFFSET_LEFT,
   BRICK_ROW_COLORS,
   BRICK_POINTS,
+  POWERUP_TYPES,
 } from "./constants";
-
-const POWERUP_POOL: PowerUpType[] = ["wide_paddle", "double_ball", "fireball"];
 
 // 0 = empty, 1 = 1 hit, 2 = 2 hits, 3 = 3 hits
 const LEVEL_LAYOUTS: number[][][] = [
@@ -59,7 +58,7 @@ export function createBricks(
 
       const hasPowerUp = Math.random() < 0.2;
       const powerUp: PowerUpType | null = hasPowerUp
-        ? POWERUP_POOL[Math.floor(Math.random() * POWERUP_POOL.length)]
+        ? POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)]
         : null;
 
       bricks.push({

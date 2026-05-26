@@ -1,5 +1,49 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import {
+  POWERUP_LABELS,
+  POWERUP_IMAGES,
+  POWERUP_COLORS,
+  POWERUP_TYPES,
+} from "../../game/constants";
+import type { PowerUpType } from "../../game/types";
+import {
+  submitScore,
+  fetchRanking,
+  USER_ID,
+  type ScoreEntry,
+} from "../../services/ranking";
+
+// Build a map of name → ordered list of distinct userIds (for disambiguation)
+function buildNameMap(entries: ScoreEntry[]): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const e of entries) {
+    if (!e.userId) continue;
+    if (!map.has(e.name)) map.set(e.name, []);
+    const ids = map.get(e.name)!;
+    if (!ids.includes(e.userId)) ids.push(e.userId);
+  }
+  return map;
+}
+
+// Returns "Name" for the first userId of that name, "Name #2" for second, etc.
+function getDisplayName(
+  entry: ScoreEntry,
+  nameMap: Map<string, string[]>,
+): string {
+  if (!entry.userId) return entry.name;
+  const ids = nameMap.get(entry.name);
+  if (!ids || ids.length <= 1) return entry.name;
+  const idx = ids.indexOf(entry.userId);
+  return idx <= 0 ? entry.name : `${entry.name} #${idx + 1}`;
+}
+
+interface Stats {
+  powerUpsCaughtMap: Record<PowerUpType, number>;
+  powerUpsMissedMap: Record<PowerUpType, number>;
+  bricksBroken: number;
+  bricksRemaining: number;
+}
 
 interface Props {
   score: number;
@@ -7,6 +51,9 @@ interface Props {
   isNewHighScore: boolean;
   onPlayAgain: () => void;
   onGoToMenu: () => void;
+  playerName: string;
+  level: number;
+  stats: Stats;
 }
 
 export function GameOverScreen({
@@ -15,6 +62,9 @@ export function GameOverScreen({
   isNewHighScore,
   onPlayAgain,
   onGoToMenu,
+  playerName,
+  level,
+  stats,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -23,6 +73,13 @@ export function GameOverScreen({
   const scoreValueRef = useRef<HTMLSpanElement>(null);
   const hsValueRef = useRef<HTMLSpanElement>(null);
   const dividerRef = useRef<HTMLDivElement>(null);
+
+  const [ranking, setRanking] = useState<ScoreEntry[]>([]);
+  const [rankingState, setRankingState] = useState<
+    "loading" | "done" | "error"
+  >("loading");
+  const [playerRank, setPlayerRank] = useState<number | null>(null);
+  const [showRanking, setShowRanking] = useState(false);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -94,6 +151,33 @@ export function GameOverScreen({
     return () => ctx.revert();
   }, [score, highScore, isNewHighScore]);
 
+  // Submit score + fetch ranking once on mount
+  useEffect(() => {
+    const totalCaught = POWERUP_TYPES.reduce(
+      (s, t) => s + (stats.powerUpsCaughtMap[t] ?? 0),
+      0,
+    );
+    const run = async () => {
+      try {
+        const { rank } = await submitScore({
+          name: playerName || "Anónimo",
+          score,
+          level,
+          bricksBroken: stats.bricksBroken,
+          powerUpsCaught: totalCaught,
+        });
+        setPlayerRank(rank);
+        const entries = await fetchRanking(10);
+        setRanking(entries);
+        setRankingState("done");
+      } catch {
+        setRankingState("error");
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const animateOut = (cb: () => void) => {
     gsap.to(rootRef.current, {
       opacity: 0,
@@ -112,6 +196,8 @@ export function GameOverScreen({
           <br />
           OVER
         </div>
+
+        {playerName && <div className="gameover-player-name">{playerName}</div>}
 
         <div className="gameover-divider" ref={dividerRef} />
 
@@ -137,6 +223,64 @@ export function GameOverScreen({
           </div>
         </div>
 
+        {/* Per-type powerup stats */}
+        <div className="gameover-stats">
+          {/* Legend */}
+          <div className="gameover-stats-legend">
+            <span className="gameover-stats-legend-caught">✓ agarraste</span>
+            <span className="gameover-stats-legend-sep">·</span>
+            <span className="gameover-stats-legend-missed">✕ se escaparon</span>
+          </div>
+          {POWERUP_TYPES.map((type) => {
+            const caught = stats.powerUpsCaughtMap[type] ?? 0;
+            const missed = stats.powerUpsMissedMap[type] ?? 0;
+            const label = (POWERUP_LABELS[type] ?? type).replace("\n", " ");
+            const imgSrc = POWERUP_IMAGES[type];
+            const color = POWERUP_COLORS[type] ?? "#fff";
+            return (
+              <div key={type} className="gameover-stats-row">
+                {imgSrc ? (
+                  <img
+                    src={imgSrc}
+                    alt={label}
+                    className="gameover-stats-pu-icon gameover-stats-pu-img"
+                  />
+                ) : (
+                  <span className="gameover-stats-pu-icon" style={{ color }}>
+                    {type}
+                  </span>
+                )}
+                <span className="gameover-stats-label">{label}</span>
+                <span className="gameover-stats-caught">✓ {caught}</span>
+                <span className="gameover-stats-missed">✕ {missed}</span>
+              </div>
+            );
+          })}
+          <div className="gameover-stats-divider" />
+          <div className="gameover-stats-row">
+            <span className="gameover-stats-label gameover-stats-label--wide">
+              Bloques destruidos
+            </span>
+            <span className="gameover-stats-caught">
+              ■ {stats.bricksBroken}
+            </span>
+            <span className="gameover-stats-neutral">
+              □ {stats.bricksRemaining}
+            </span>
+          </div>
+        </div>
+
+        {/* VER RANKING button */}
+        <button
+          className="btn btn--ranking"
+          onClick={() => setShowRanking(true)}
+        >
+          VER RANKING
+          {playerRank !== null && (
+            <span className="btn-ranking-badge">#{playerRank}</span>
+          )}
+        </button>
+
         <div className="gameover-buttons" ref={buttonsRef}>
           <button
             className="btn btn--primary"
@@ -152,6 +296,65 @@ export function GameOverScreen({
           </button>
         </div>
       </div>
+
+      {/* Ranking modal */}
+      {showRanking && (
+        <div className="ranking-backdrop" onClick={() => setShowRanking(false)}>
+          <div className="ranking-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="ranking-modal-close"
+              onClick={() => setShowRanking(false)}
+              aria-label="Cerrar ranking"
+            >
+              ✕
+            </button>
+            <h2 className="ranking-modal-title">RANKING</h2>
+            {rankingState === "loading" && (
+              <p className="ranking-modal-msg">Cargando…</p>
+            )}
+            {rankingState === "error" && (
+              <p className="ranking-modal-msg">No disponible</p>
+            )}
+            {rankingState === "done" && ranking.length === 0 && (
+              <p className="ranking-modal-msg">Sin entradas aún</p>
+            )}
+            {rankingState === "done" &&
+              ranking.length > 0 &&
+              (() => {
+                const nameMap = buildNameMap(ranking);
+                return (
+                  <ol className="ranking-modal-list">
+                    {ranking.map((entry) => {
+                      const isMe = entry.userId === USER_ID;
+                      return (
+                        <li
+                          key={entry.rank}
+                          className={
+                            "ranking-modal-entry" +
+                            (isMe ? " ranking-modal-entry--me" : "")
+                          }
+                        >
+                          <span className="ranking-modal-pos">
+                            {entry.rank}
+                          </span>
+                          <span className="ranking-modal-name">
+                            {getDisplayName(entry, nameMap)}
+                          </span>
+                          {isMe && (
+                            <span className="ranking-modal-you">TÚ</span>
+                          )}
+                          <span className="ranking-modal-score">
+                            {entry.score.toLocaleString()}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                );
+              })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

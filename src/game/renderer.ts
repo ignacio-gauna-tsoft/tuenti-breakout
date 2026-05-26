@@ -1,19 +1,39 @@
 import type { GameState } from "./types";
 import {
+  BACKGROUND_IMAGE,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   POWERUP_COLORS,
-  POWERUP_ICONS,
+  POWERUP_IMAGES,
 } from "./constants";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Prize image cache ────────────────────────────────────────────────────────
 
-function hexToRgba(hex: string, a: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${a})`;
+const _imgCache = new Map<string, HTMLImageElement>();
+let _backgroundLayer: HTMLCanvasElement | null = null;
+
+const BACKGROUND_STARS = Array.from({ length: 32 }, (_, i) => {
+  const xSeed = (i * 67 + 19) % 480;
+  const ySeed = (i * 113 + 41) % 640;
+  const phase = ((i * 31) % 100) / 100;
+  const radius = 0.45 + ((i * 17) % 9) * 0.11;
+  return { phase, radius, x: xSeed, y: ySeed };
+});
+
+function getCachedImage(src: string): HTMLImageElement {
+  if (!_imgCache.has(src)) {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = src;
+    _imgCache.set(src, img);
+  }
+  return _imgCache.get(src)!;
 }
+
+getCachedImage(BACKGROUND_IMAGE);
+Object.values(POWERUP_IMAGES).forEach(getCachedImage);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function lighten(hex: string, amt: number): string {
   const r = Math.min(
@@ -53,14 +73,96 @@ function roundRect(
   ctx.closePath();
 }
 
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+): void {
+  const baseScale = Math.max(
+    CANVAS_WIDTH / img.naturalWidth,
+    CANVAS_HEIGHT / img.naturalHeight,
+  );
+  const driftScale = 1.06;
+  const scale = baseScale * driftScale;
+  const width = img.naturalWidth * scale;
+  const height = img.naturalHeight * scale;
+  const x = (CANVAS_WIDTH - width) / 2;
+  const y = (CANVAS_HEIGHT - height) / 2;
+
+  ctx.drawImage(img, x, y, width, height);
+}
+
+function drawStarfield(ctx: CanvasRenderingContext2D, frame: number): void {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  for (const star of BACKGROUND_STARS) {
+    const twinkle = Math.sin(frame * 0.025 + star.phase * Math.PI * 2);
+    const alpha = 0.2 + (twinkle + 1) * 0.22;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawSupernovaGlow(ctx: CanvasRenderingContext2D): void {
+  const cx = CANVAS_WIDTH * 0.72;
+  const cy = CANVAS_HEIGHT * 0.82;
+
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 210);
+  glow.addColorStop(0, "rgba(255,120,220,0.26)");
+  glow.addColorStop(0.28, "rgba(155,70,255,0.2)");
+  glow.addColorStop(0.72, "rgba(40,80,255,0.08)");
+  glow.addColorStop(1, "rgba(7,7,26,0)");
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.restore();
+}
+
+function getBackgroundLayer(img: HTMLImageElement): HTMLCanvasElement | null {
+  if (!img.complete || img.naturalWidth <= 0) return null;
+  if (_backgroundLayer) return _backgroundLayer;
+
+  const layer = document.createElement("canvas");
+  layer.width = CANVAS_WIDTH;
+  layer.height = CANVAS_HEIGHT;
+
+  const layerCtx = layer.getContext("2d");
+  if (!layerCtx) return null;
+
+  drawCoverImage(layerCtx, img);
+  drawSupernovaGlow(layerCtx);
+
+  const overlay = layerCtx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+  overlay.addColorStop(0, "rgba(7,7,26,0.32)");
+  overlay.addColorStop(1, "rgba(7,7,26,0.5)");
+  layerCtx.fillStyle = overlay;
+  layerCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  _backgroundLayer = layer;
+  return layer;
+}
+
 // ─── Layers ──────────────────────────────────────────────────────────────────
 
-function drawBackground(ctx: CanvasRenderingContext2D): void {
-  const bg = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-  bg.addColorStop(0, "#07071A");
-  bg.addColorStop(1, "#0E0E2A");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+function drawBackground(ctx: CanvasRenderingContext2D, frame: number): void {
+  const bgImage = getCachedImage(BACKGROUND_IMAGE);
+  const backgroundLayer = getBackgroundLayer(bgImage);
+
+  if (backgroundLayer) {
+    ctx.drawImage(backgroundLayer, 0, 0);
+  } else {
+    ctx.fillStyle = "#07071a";
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
+
+  drawStarfield(ctx, frame);
 
   // Subtle grid
   ctx.strokeStyle = "rgba(233,30,140,0.04)";
@@ -119,18 +221,6 @@ function drawBricks(ctx: CanvasRenderingContext2D, state: GameState): void {
     ctx.shadowBlur = 0;
     roundRect(ctx, x + 2, y + 2, w - 4, 3, 2);
     ctx.fill();
-
-    // Power-up hint
-    if (brick.powerUp) {
-      const dotColor = POWERUP_COLORS[brick.powerUp] ?? "#fff";
-      ctx.fillStyle = dotColor;
-      ctx.shadowColor = dotColor;
-      ctx.shadowBlur = 6;
-      ctx.font = 'bold 8px "Space Grotesk", sans-serif';
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(";)", x + w / 2, y + h / 2);
-    }
 
     ctx.restore();
   }
@@ -226,63 +316,68 @@ function drawDroppingPowerUps(
 ): void {
   for (const pu of state.droppingPowerUps) {
     const color = POWERUP_COLORS[pu.type] ?? "#fff";
-    const icon = POWERUP_ICONS[pu.type] ?? "?";
-    const cr = 14; // circle radius
+    const imgSrc = POWERUP_IMAGES[pu.type];
+    const size = 32; // diameter
 
     ctx.save();
 
     // Outer glow
     ctx.shadowColor = color;
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 16;
 
-    // Circle background gradient
-    const grad = ctx.createRadialGradient(
-      pu.x - cr * 0.3,
-      pu.y - cr * 0.35,
-      0,
-      pu.x,
-      pu.y,
-      cr,
-    );
-    grad.addColorStop(0, hexToRgba(color, 1));
-    grad.addColorStop(1, hexToRgba(color, 0.55));
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(pu.x, pu.y, cr, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Subtle inner ring
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(255,255,255,0.3)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(pu.x, pu.y, cr - 1, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Icon inside circle
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(icon, pu.x, pu.y);
+    if (imgSrc) {
+      const img = getCachedImage(imgSrc);
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, pu.x - size / 2, pu.y - size / 2, size, size);
+      } else {
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(pu.x, pu.y, size / 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
 
     ctx.restore();
   }
 }
 
+function isMobileInput(): boolean {
+  return (
+    window.innerWidth <= 640 ||
+    window.matchMedia?.("(pointer: coarse)").matches ||
+    false
+  );
+}
+
 function drawReadyOverlay(ctx: CanvasRenderingContext2D, frame: number): void {
   const pulse = Math.sin(frame * 0.07) * 0.35 + 0.65;
+  const arrowShift = Math.sin(frame * 0.08) * 10;
+  const mobile = isMobileInput();
+  const title = mobile ? "DESLIZA PARA EMPEZAR" : "PRESS SPACE TO LAUNCH";
+  const hint = mobile ? "mueve la paleta con el dedo" : "mueve con flechas o A/D";
+
   ctx.save();
   ctx.globalAlpha = pulse;
+  ctx.shadowColor = "#E91E8C";
+  ctx.shadowBlur = 14;
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = '13px "Space Grotesk", sans-serif';
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(
-    "PRESS SPACE OR TAP TO LAUNCH",
-    CANVAS_WIDTH / 2,
-    CANVAS_HEIGHT - 95,
-  );
+
+  ctx.font = 'bold 22px "Orbitron", monospace';
+  ctx.fillText("\u2190", CANVAS_WIDTH / 2 - 46 - arrowShift, CANVAS_HEIGHT - 126);
+  ctx.fillText("\u2192", CANVAS_WIDTH / 2 + 46 + arrowShift, CANVAS_HEIGHT - 126);
+
+  ctx.shadowBlur = 8;
+  ctx.font = 'bold 11px "Space Grotesk", sans-serif';
+  ctx.fillText(title, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 96);
+
+  ctx.globalAlpha = pulse * 0.7;
+  ctx.shadowBlur = 0;
+  ctx.font = '9px "Space Grotesk", sans-serif';
+  ctx.fillText(hint, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 78);
   ctx.restore();
 }
 
@@ -292,7 +387,7 @@ export function renderGame(
   ctx: CanvasRenderingContext2D,
   state: GameState,
 ): void {
-  drawBackground(ctx);
+  drawBackground(ctx, state.frame);
   drawBricks(ctx, state);
   drawDroppingPowerUps(ctx, state);
   drawPaddle(ctx, state);

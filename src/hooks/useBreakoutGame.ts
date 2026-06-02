@@ -6,8 +6,13 @@ import type {
   GamePhase,
   ActiveEffect,
   PowerUpType,
+  PrincipleStat,
 } from "../game/types";
-import { CANVAS_WIDTH, createPowerUpCountMap } from "../game/constants";
+import {
+  CANVAS_WIDTH,
+  createPowerUpCountMap,
+  createPrincipleStats,
+} from "../game/constants";
 
 export interface PowerUpToast {
   id: number;
@@ -30,6 +35,8 @@ export interface GameUIState {
   bricksRemaining: number;
   powerUpsCaughtMap: Record<PowerUpType, number>;
   powerUpsMissedMap: Record<PowerUpType, number>;
+  principleStats: Record<PowerUpType, PrincipleStat>;
+  graciasMoment: boolean;
 }
 
 const INITIAL_UI: GameUIState = {
@@ -45,6 +52,8 @@ const INITIAL_UI: GameUIState = {
   bricksRemaining: 0,
   powerUpsCaughtMap: createPowerUpCountMap(),
   powerUpsMissedMap: createPowerUpCountMap(),
+  principleStats: createPrincipleStats(),
+  graciasMoment: false,
 };
 
 interface ToastTimers {
@@ -232,6 +241,8 @@ export function useBreakoutGame(
       bricksRemaining: 0,
       powerUpsCaughtMap: createPowerUpCountMap(),
       powerUpsMissedMap: createPowerUpCountMap(),
+      principleStats: createPrincipleStats(),
+      graciasMoment: false,
     });
   }, []);
 
@@ -268,6 +279,8 @@ export function useBreakoutGame(
             bricks,
             powerUpsCaughtMap,
             powerUpsMissedMap,
+            principleStats,
+            graciasMoment,
           } = engine.state;
           const bricksRemaining = bricks.filter((b) => b.alive).length;
 
@@ -297,7 +310,8 @@ export function useBreakoutGame(
               prev.powerUpsCaught !== powerUpsCaught ||
               prev.powerUpsMissed !== powerUpsMissed ||
               prev.bricksBroken !== bricksBroken ||
-              prev.bricksRemaining !== bricksRemaining
+              prev.bricksRemaining !== bricksRemaining ||
+              prev.graciasMoment !== graciasMoment
             ) {
               return {
                 phase,
@@ -313,6 +327,8 @@ export function useBreakoutGame(
                 // Shallow-clone so React sees a new reference when counts change
                 powerUpsCaughtMap: { ...powerUpsCaughtMap },
                 powerUpsMissedMap: { ...powerUpsMissedMap },
+                principleStats: { ...principleStats },
+                graciasMoment,
               };
             }
             return prev;

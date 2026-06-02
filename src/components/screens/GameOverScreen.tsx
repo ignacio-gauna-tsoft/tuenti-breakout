@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import gsap from "gsap";
+import { soundEngine } from "../../game/sound";
 import {
-  POWERUP_LABELS,
-  POWERUP_IMAGES,
-  POWERUP_COLORS,
+  GRACIAS,
   POWERUP_TYPES,
+  PRINCIPLES,
+  PRINCIPLES_ORDER,
 } from "../../game/constants";
-import type { PowerUpType } from "../../game/types";
+import type { PowerUpType, PrincipleStat } from "../../game/types";
 import {
   submitScore,
   fetchRanking,
@@ -14,7 +15,6 @@ import {
   type ScoreEntry,
 } from "../../services/ranking";
 
-// Build a map of name → ordered list of distinct userIds (for disambiguation)
 function buildNameMap(entries: ScoreEntry[]): Map<string, string[]> {
   const map = new Map<string, string[]>();
   for (const e of entries) {
@@ -26,7 +26,6 @@ function buildNameMap(entries: ScoreEntry[]): Map<string, string[]> {
   return map;
 }
 
-// Returns "Name" for the first userId of that name, "Name #2" for second, etc.
 function getDisplayName(
   entry: ScoreEntry,
   nameMap: Map<string, string[]>,
@@ -43,6 +42,8 @@ interface Stats {
   powerUpsMissedMap: Record<PowerUpType, number>;
   bricksBroken: number;
   bricksRemaining: number;
+  principleStats?: Record<PowerUpType, PrincipleStat>;
+  graciasMoment?: boolean;
 }
 
 interface Props {
@@ -67,13 +68,13 @@ export function GameOverScreen({
   stats,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const scoreRef = useRef<HTMLDivElement>(null);
-  const buttonsRef = useRef<HTMLDivElement>(null);
+  const stage1Ref = useRef<HTMLDivElement>(null);
+  const stage2Ref = useRef<HTMLDivElement>(null);
   const scoreValueRef = useRef<HTMLSpanElement>(null);
   const hsValueRef = useRef<HTMLSpanElement>(null);
-  const dividerRef = useRef<HTMLDivElement>(null);
+  const dominantCardRef = useRef<HTMLDivElement>(null);
 
+  const [stage, setStage] = useState<1 | 2>(1);
   const [ranking, setRanking] = useState<ScoreEntry[]>([]);
   const [rankingState, setRankingState] = useState<
     "loading" | "done" | "error"
@@ -81,6 +82,45 @@ export function GameOverScreen({
   const [playerRank, setPlayerRank] = useState<number | null>(null);
   const [showRanking, setShowRanking] = useState(false);
 
+  // ─── Computed values (safe, no undefined risk) ──────────────────────────────
+  const dominant: PowerUpType | null = useMemo(() => {
+    let best: PowerUpType | null = null;
+    let bestCount = 0;
+    for (const code of PRINCIPLES_ORDER) {
+      const c = stats.powerUpsCaughtMap?.[code] ?? 0;
+      if (c > bestCount) {
+        bestCount = c;
+        best = code;
+      }
+    }
+    return bestCount > 0 ? best : null;
+  }, [stats.powerUpsCaughtMap]);
+
+  const distinctPrinciplesCaught = useMemo(
+    () =>
+      POWERUP_TYPES.reduce(
+        (acc, t) => acc + ((stats.powerUpsCaughtMap?.[t] ?? 0) > 0 ? 1 : 0),
+        0,
+      ),
+    [stats.powerUpsCaughtMap],
+  );
+
+  const levelComplete =
+    (stats.bricksRemaining ?? 0) === 0 && (stats.bricksBroken ?? 0) > 0;
+  const showGracias =
+    isNewHighScore ||
+    levelComplete ||
+    distinctPrinciplesCaught >= 3 ||
+    !!stats.graciasMoment;
+
+  // ─── Thanks sound ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (showGracias) {
+      soundEngine.thanksBadge();
+    }
+  }, [showGracias]);
+
+  // ─── Stage 1 animation + auto-transition to stage 2 ────────────────────────
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "back.out(1.4)" } });
@@ -88,31 +128,12 @@ export function GameOverScreen({
       tl.fromTo(
         rootRef.current,
         { opacity: 0 },
-        { opacity: 1, duration: 0.15, ease: "none" },
-      )
-        .fromTo(
-          titleRef.current,
-          { y: -40, opacity: 0, scale: 0.75, filter: "blur(8px)" },
-          { y: 0, opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.55 },
-        )
-        .fromTo(
-          dividerRef.current,
-          { scaleX: 0, opacity: 0 },
-          { scaleX: 1, opacity: 1, duration: 0.4, ease: "power2.out" },
-          "-=0.1",
-        )
-        .fromTo(
-          scoreRef.current,
-          { y: 24, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.45 },
-          "-=0.15",
-        )
-        .fromTo(
-          buttonsRef.current,
-          { y: 20, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.4 },
-          "-=0.1",
-        );
+        { opacity: 1, duration: 0.2, ease: "none" },
+      ).fromTo(
+        stage1Ref.current,
+        { y: -30, opacity: 0, scale: 0.9 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.5 },
+      );
 
       // Animated score counter
       const counter = { val: 0 };
@@ -120,7 +141,7 @@ export function GameOverScreen({
         gsap.to(counter, {
           val: score,
           duration: 0.9,
-          delay: 0.6,
+          delay: 0.4,
           ease: "power2.out",
           onUpdate: () => {
             if (scoreValueRef.current)
@@ -142,19 +163,63 @@ export function GameOverScreen({
             repeat: 3,
             yoyo: true,
             ease: "sine.inOut",
-            delay: 1.2,
+            delay: 1.0,
           },
+        );
+      }
+
+      // Dominant card entrance in Stage 1
+      if (dominantCardRef.current) {
+        gsap.fromTo(
+          dominantCardRef.current,
+          { y: 20, opacity: 0, scale: 0.9 },
+          { y: 0, opacity: 1, scale: 1, duration: 0.5, delay: 0.9, ease: "back.out(1.4)" },
         );
       }
     }, rootRef);
 
-    return () => ctx.revert();
-  }, [score, highScore, isNewHighScore]);
+    // Auto-advance to stage 2 after 3.5s
+    const timer = window.setTimeout(() => setStage(2), 3500);
 
-  // Submit score + fetch ranking once on mount
+    return () => {
+      ctx.revert();
+      window.clearTimeout(timer);
+    };
+  }, [score, isNewHighScore]);
+
+  // ─── Stage 2 entrance ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (stage !== 2 || !stage2Ref.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        stage2Ref.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.35, ease: "power2.out" },
+      );
+      // Stagger rows
+      const rows = stage2Ref.current!.querySelectorAll(".gameover-stats-row");
+      if (rows.length > 0) {
+        gsap.fromTo(
+          rows,
+          { x: -12, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.3,
+            stagger: 0.06,
+            ease: "power2.out",
+            delay: 0.2,
+          },
+        );
+      }
+    }, rootRef);
+    return () => ctx.revert();
+  }, [stage]);
+
+  // ─── Submit score + fetch ranking ───────────────────────────────────────────
   useEffect(() => {
     const totalCaught = POWERUP_TYPES.reduce(
-      (s, t) => s + (stats.powerUpsCaughtMap[t] ?? 0),
+      (s, t) => s + (stats.powerUpsCaughtMap?.[t] ?? 0),
       0,
     );
     const run = async () => {
@@ -163,7 +228,7 @@ export function GameOverScreen({
           name: playerName || "Anónimo",
           score,
           level,
-          bricksBroken: stats.bricksBroken,
+          bricksBroken: stats.bricksBroken ?? 0,
           powerUpsCaught: totalCaught,
         });
         setPlayerRank(rank);
@@ -191,110 +256,150 @@ export function GameOverScreen({
   return (
     <div className="gameover-screen" ref={rootRef}>
       <div className="gameover-card">
-        <div className="gameover-title" ref={titleRef}>
-          GAME
-          <br />
-          OVER
-        </div>
-
-        {playerName && <div className="gameover-player-name">{playerName}</div>}
-
-        <div className="gameover-divider" ref={dividerRef} />
-
-        <div className="gameover-scores" ref={scoreRef}>
-          <div className="gameover-score-block">
-            <span className="gameover-score-label">SCORE</span>
-            <span className="gameover-score-value" ref={scoreValueRef}>
-              0
-            </span>
-          </div>
-          <div className="gameover-score-sep" />
-          <div className="gameover-score-block">
-            <span className="gameover-score-label">
-              BEST{" "}
-              {isNewHighScore && <span className="gameover-new">NEW!</span>}
-            </span>
-            <span
-              className={`gameover-score-value ${isNewHighScore ? "gameover-score-value--hs" : ""}`}
-              ref={hsValueRef}
-            >
-              {highScore.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        {/* Per-type powerup stats */}
-        <div className="gameover-stats">
-          {/* Legend */}
-          <div className="gameover-stats-legend">
-            <span className="gameover-stats-legend-caught">✓ agarraste</span>
-            <span className="gameover-stats-legend-sep">·</span>
-            <span className="gameover-stats-legend-missed">✕ se escaparon</span>
-          </div>
-          {POWERUP_TYPES.map((type) => {
-            const caught = stats.powerUpsCaughtMap[type] ?? 0;
-            const missed = stats.powerUpsMissedMap[type] ?? 0;
-            const label = (POWERUP_LABELS[type] ?? type).replace("\n", " ");
-            const imgSrc = POWERUP_IMAGES[type];
-            const color = POWERUP_COLORS[type] ?? "#fff";
-            return (
-              <div key={type} className="gameover-stats-row">
-                {imgSrc ? (
-                  <img
-                    src={imgSrc}
-                    alt={label}
-                    className="gameover-stats-pu-icon gameover-stats-pu-img"
-                  />
-                ) : (
-                  <span className="gameover-stats-pu-icon" style={{ color }}>
-                    {type}
-                  </span>
-                )}
-                <span className="gameover-stats-label">{label}</span>
-                <span className="gameover-stats-caught">✓ {caught}</span>
-                <span className="gameover-stats-missed">✕ {missed}</span>
-              </div>
-            );
-          })}
-          <div className="gameover-stats-divider" />
-          <div className="gameover-stats-row">
-            <span className="gameover-stats-label gameover-stats-label--wide">
-              Bloques destruidos
-            </span>
-            <span className="gameover-stats-caught">
-              ■ {stats.bricksBroken}
-            </span>
-            <span className="gameover-stats-neutral">
-              □ {stats.bricksRemaining}
-            </span>
-          </div>
-        </div>
-
-        {/* VER RANKING button */}
-        <button
-          className="btn btn--ranking"
-          onClick={() => setShowRanking(true)}
+        {/* ─── STAGE 1: Emotional impact ──────────────────────────── */}
+        <div
+          className={`gameover-stage1 ${stage >= 1 ? "gameover-stage--visible" : ""}`}
+          ref={stage1Ref}
         >
-          VER RANKING
-          {playerRank !== null && (
-            <span className="btn-ranking-badge">#{playerRank}</span>
-          )}
-        </button>
+          <span className="gameover-hero-eyebrow">
+            {levelComplete ? "NIVEL COMPLETO" : "PARTIDA FINALIZADA"}
+          </span>
 
-        <div className="gameover-buttons" ref={buttonsRef}>
-          <button
-            className="btn btn--primary"
-            onClick={() => animateOut(onPlayAgain)}
-          >
-            JUGAR DE NUEVO
-          </button>
-          <button
-            className="btn btn--ghost"
-            onClick={() => animateOut(onGoToMenu)}
-          >
-            MENÚ
-          </button>
+          {playerName && (
+            <div className="gameover-player-name">{playerName}</div>
+          )}
+
+          <div className="gameover-scores">
+            <div className="gameover-score-block">
+              <span className="gameover-score-label">SCORE</span>
+              <span className="gameover-score-value" ref={scoreValueRef}>
+                0
+              </span>
+            </div>
+            <div className="gameover-score-sep" />
+            <div className="gameover-score-block">
+              <span className="gameover-score-label">
+                BEST{" "}
+                {isNewHighScore && <span className="gameover-new">NEW!</span>}
+              </span>
+              <span
+                className={`gameover-score-value ${isNewHighScore ? "gameover-score-value--hs" : ""}`}
+                ref={hsValueRef}
+              >
+                {highScore.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {showGracias && (
+            <div className="gracias-badge" role="status">
+              <span className="gracias-badge-dot" aria-hidden="true" />
+              <span className="gracias-badge-text">
+                {GRACIAS.label}
+                <small>{GRACIAS.copy}</small>
+              </span>
+            </div>
+          )}
+
+          {/* Dominant principle revealed in Stage 1 */}
+          {dominant && (
+            <div
+              ref={dominantCardRef}
+              className="dominant-card dominant-card--stage1"
+              style={
+                {
+                  ["--dom-color" as string]: PRINCIPLES[dominant].color,
+                  opacity: 0,
+                } as CSSProperties
+              }
+            >
+              <img
+                src={PRINCIPLES[dominant].image}
+                alt=""
+                aria-hidden="true"
+                className="dominant-card-img"
+              />
+              <div className="dominant-card-text">
+                <span className="dominant-card-eyebrow">
+                  PRINCIPIO DOMINANTE
+                </span>
+                <span className="dominant-card-name">
+                  {PRINCIPLES[dominant].shortLabel}
+                </span>
+                <span className="dominant-card-mode">
+                  {PRINCIPLES[dominant].modeName}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* ─── STAGE 2: Summary ───────────────────────────────────── */}
+        {stage >= 2 && (
+          <div className="gameover-stage2" ref={stage2Ref}>
+            {/* Per-principle stats */}
+            <div className="gameover-stats">
+              {PRINCIPLES_ORDER.map((type) => {
+                const p = PRINCIPLES[type];
+                const caught = stats.powerUpsCaughtMap?.[type] ?? 0;
+                const missed = stats.powerUpsMissedMap?.[type] ?? 0;
+                const impact =
+                  stats.principleStats?.[type]?.impactScore ?? 0;
+                if (caught === 0 && missed === 0) return null;
+                return (
+                  <div key={type} className="gameover-stats-row">
+                    <img
+                      src={p.image}
+                      alt=""
+                      aria-hidden="true"
+                      className="gameover-stats-pu-icon gameover-stats-pu-img"
+                    />
+                    <span className="gameover-stats-label">
+                      {p.shortLabel}
+                    </span>
+                    <span className="gameover-stats-mode">
+                      {p.modeName}
+                    </span>
+                    <span className="gameover-stats-caught">✓ {caught}</span>
+                    <span className="gameover-stats-missed">✕ {missed}</span>
+                    {impact > 0 && (
+                      <span className="gameover-stats-impact">
+                        +{impact}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Actions */}
+            <div className="gameover-buttons">
+              <button
+                className="btn btn--primary gameover-btn--play"
+                onClick={() => animateOut(onPlayAgain)}
+              >
+                JUGAR DE NUEVO
+              </button>
+              <div className="gameover-buttons-secondary">
+                <button
+                  className="btn btn--ranking gameover-btn--secondary"
+                  onClick={() => setShowRanking(true)}
+                >
+                  RANKING
+                  {playerRank !== null && (
+                    <span className="btn-ranking-badge">#{playerRank}</span>
+                  )}
+                </button>
+                <button
+                  className="btn btn--ghost gameover-btn--secondary"
+                  onClick={() => animateOut(onGoToMenu)}
+                >
+                  MENÚ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ranking modal */}

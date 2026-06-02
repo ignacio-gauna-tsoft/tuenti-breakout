@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import gsap from "gsap";
 import { QRCodeSVG } from "qrcode.react";
-import { BACKGROUND_IMAGE } from "../../game/constants";
+import {
+  BACKGROUND_IMAGE,
+} from "../../game/constants";
 
 const SHARE_URL = "https://ignacio-gauna-tsoft.github.io/tuenti-breakout/";
 
@@ -89,6 +91,14 @@ export function StartScreen({ highScore, onStart }: Props) {
         <div className="start-subtitle" ref={subtitleRef}>
           <span className="start-subtitle-text">conecta sin limites</span>
         </div>
+
+        <div className="start-pitch">
+          <p className="start-pitch-headline">Jugá nuestros principios.</p>
+          <p className="start-pitch-sub">
+            5 modos. 5 maneras de hacerlo. Una sola cultura: la nuestra.
+          </p>
+        </div>
+
 
         <div className="start-info" ref={infoRef}>
           {highScore > 0 && (

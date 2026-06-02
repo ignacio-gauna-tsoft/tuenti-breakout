@@ -87,6 +87,81 @@ class SoundEngine {
   wallHit() {
     this.tone(220, "sine", 0.04, 0.08);
   }
+
+  // ─── Cultural cues (Prompt 02) ────────────────────────────────────────────
+  // Each principle has a tiny signature played when its power-up activates.
+
+  powerUpActivate(type: string) {
+    switch (type) {
+      case "todo_terreno":
+        // Percusión corta + glide ascendente.
+        this.tone(180, "square", 0.06, 0.18, 0);
+        this.tone(320, "sine", 0.18, 0.16, 0.04);
+        this.tone(520, "sine", 0.22, 0.12, 0.12);
+        break;
+      case "fan_cliente":
+        // Dos tonos call-and-response.
+        this.tone(660, "sine", 0.1, 0.18, 0);
+        this.tone(990, "sine", 0.12, 0.16, 0.12);
+        break;
+      case "valentia":
+        // Riser + golpe brillante.
+        this.tone(280, "sawtooth", 0.18, 0.18, 0);
+        this.tone(560, "square", 0.12, 0.16, 0.16);
+        this.tone(1120, "triangle", 0.18, 0.16, 0.22);
+        break;
+      case "dejamos_huella":
+        // Shimmer con eco corto.
+        this.tone(880, "sine", 0.18, 0.14, 0);
+        this.tone(1320, "sine", 0.22, 0.1, 0.1);
+        this.tone(1760, "sine", 0.26, 0.06, 0.22);
+        break;
+      case "equipazo":
+        // Tríada cálida.
+        this.tone(523, "sine", 0.22, 0.16, 0);
+        this.tone(659, "sine", 0.22, 0.14, 0);
+        this.tone(784, "sine", 0.22, 0.12, 0);
+        break;
+      default:
+        this.powerUpCollect();
+    }
+  }
+
+  /** Subtle impact cue tied to a cultural micro-event. */
+  principleImpact(type: string) {
+    switch (type) {
+      case "todo_terreno":
+        // Mint "save" chime.
+        this.tone(1320, "triangle", 0.08, 0.1, 0);
+        this.tone(1760, "sine", 0.1, 0.08, 0.04);
+        break;
+      case "fan_cliente":
+        // Priority brick break.
+        this.tone(1480, "square", 0.08, 0.12, 0);
+        break;
+      case "valentia":
+        // Chain transformation.
+        this.tone(660, "sawtooth", 0.06, 0.12, 0);
+        this.tone(990, "triangle", 0.1, 0.1, 0.05);
+        break;
+      case "dejamos_huella":
+        // Combo with elegant delay.
+        this.tone(1175, "sine", 0.12, 0.1, 0);
+        this.tone(1567, "sine", 0.18, 0.08, 0.12);
+        break;
+      case "equipazo":
+        // Bumper support.
+        this.tone(880, "triangle", 0.06, 0.1, 0);
+        break;
+    }
+  }
+
+  /** ¡Gracias! recognition chime. */
+  thanksBadge() {
+    this.tone(880, "sine", 0.25, 0.16, 0);
+    this.tone(1320, "sine", 0.32, 0.12, 0.08);
+    this.tone(1760, "sine", 0.4, 0.08, 0.2);
+  }
 }
 
 export const soundEngine = new SoundEngine();

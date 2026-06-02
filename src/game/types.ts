@@ -8,6 +8,8 @@ export interface Ball {
   vy: number;
   radius: number;
   fireball: boolean;
+  /** Recent positions for trail rendering (Valentía / Dejamos Huella). */
+  trail?: Array<{ x: number; y: number }>;
 }
 
 export interface Paddle {
@@ -32,6 +34,12 @@ export interface Brick {
   points: number;
   powerUp: PowerUpType | null;
   alive: boolean;
+  /** Fan Cliente priority target (resets on cluster rebuild). */
+  priority?: boolean;
+  /** Dejamos Huella: timestamp until which this brick is "marked". */
+  markedUntil?: number;
+  /** Valentía: timestamp of last pierce flash, for renderer. */
+  ignitedAt?: number;
 }
 
 export type PowerUpType =
@@ -53,6 +61,28 @@ export interface ActiveEffect {
   type: PowerUpType;
   expiresAt: number;
   collectedAt: number;
+}
+
+/** Equipazo wingmate bumper. */
+export interface Bumper {
+  id: number;
+  x: number;
+  y: number;
+  radius: number;
+  /** Timestamp until which this bumper is on cooldown. */
+  cooldownUntil: number;
+  /** Timestamp of last successful reflection, for flash render. */
+  flashAt: number;
+}
+
+/** Per-principle impact stats; lives in parallel to the legacy maps. */
+export interface PrincipleStat {
+  spawned: number;
+  caught: number;
+  missed: number;
+  uptimeMs: number;
+  impactScore: number;
+  custom: Record<string, number>;
 }
 
 export interface Particle {
@@ -95,4 +125,12 @@ export interface GameState {
   // Per-type breakdowns for the end-of-game summary
   powerUpsCaughtMap: Record<PowerUpType, number>;
   powerUpsMissedMap: Record<PowerUpType, number>;
+  // Per-principle cultural stats (impact score, custom counters per principle)
+  principleStats: Record<PowerUpType, PrincipleStat>;
+  // Equipazo wingmates (active only while Equipazo is on).
+  bumpers: Bumper[];
+  // Valentía pierce counter (for transformation chains every 3 hits).
+  pierceCounter: number;
+  // Flagged when a particularly close save happens (used for ¡Gracias! badge).
+  graciasMoment: boolean;
 }

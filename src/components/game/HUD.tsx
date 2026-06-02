@@ -1,11 +1,19 @@
+import type { ActiveEffect } from "../../game/types";
+
 interface Props {
   lives: number;
   score: number;
   level: number;
   highScore: number;
+  activeEffects?: ActiveEffect[];
 }
 
-export function HUD({ lives, score, level, highScore }: Props) {
+export function HUD({
+  lives,
+  score,
+  level,
+  highScore,
+}: Props) {
   return (
     <div className="hud">
       <div className="hud-top">

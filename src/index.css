@@ -1151,6 +1151,31 @@ body {
   width: 100%;
 }
 
+.gameover-btn--play {
+  width: 100%;
+  font-size: 16px;
+  padding: 16px 32px;
+}
+
+.gameover-buttons-secondary {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.gameover-btn--secondary {
+  flex: 1;
+  font-size: 11px;
+  padding: 11px 16px;
+  letter-spacing: 1.5px;
+}
+
+/* Dominant card in Stage 1 — slightly larger */
+.dominant-card--stage1 {
+  margin-top: 12px;
+  padding: 12px 16px;
+}
+
 /* ─── Buttons ───────────────────────────────────────────────── */
 .btn {
   font-family: var(--font-display);
@@ -1471,4 +1496,610 @@ body {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SUPERNOVA · CULTURAL LAYER
+   New design tokens + components on top of the existing arcade base.
+   This block is additive; it overrides selected surfaces and adds the new
+   cultural UI (principles row, HUD chips, educative toasts, GameOver cards).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --sn-bg-900: #1F1732;
+  --sn-bg-800: #261B44;
+  --sn-surface-700: #30274F;
+  --sn-surface-600: #393266;
+  --sn-stroke: #6B5A94;
+  --sn-stroke-soft: rgba(107, 90, 148, 0.35);
+  --sn-brand: #A0358B;
+  --sn-brand-hover: #B73589;
+  --sn-violet: #7B5DC7;
+  --sn-mint: #54E4C1;
+  --sn-cyan: #56C7FF;
+  --sn-amber: #FFD166;
+  --sn-text: #F7F2FF;
+  --sn-text-2: #CFC3E8;
+  --sn-text-3: #A99DBE;
+  --sn-radius-card: 18px;
+  --sn-radius-chip: 999px;
+  --sn-shadow-card:
+    0 4px 18px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--sn-stroke-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --sn-font-body:
+    "Sora", "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+/* Slightly warmer plum background instead of near-black */
+body {
+  background: var(--sn-bg-900);
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .start-bg-blob,
+  .start-cta,
+  .powerup-toast--pulse-0,
+  .powerup-toast--pulse-1 {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Consistent focus ring */
+:focus-visible {
+  outline: 2px solid var(--sn-mint);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── StartScreen · cultural pitch ──────────────────────────── */
+.start-pitch {
+  max-width: 560px;
+  width: min(560px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  margin-top: 4px;
+}
+.start-pitch-headline {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2.6vw, 24px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--sn-text);
+  text-transform: uppercase;
+}
+.start-pitch-sub {
+  font-family: var(--sn-font-body);
+  font-size: clamp(13px, 1.8vw, 15px);
+  line-height: 1.45;
+  color: var(--sn-text-2);
+}
+.start-pitch-helper {
+  font-family: var(--sn-font-body);
+  font-size: 12px;
+  color: var(--sn-text-3);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* ─── StartScreen · principles row ─────────────────────────── */
+.principles-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 620px;
+  width: min(620px, 94vw);
+  margin-top: 4px;
+}
+.principle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 8px;
+  border-radius: var(--sn-radius-chip);
+  background: rgba(48, 39, 79, 0.55);
+  border: 1px solid var(--sn-stroke-soft);
+  backdrop-filter: blur(6px);
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+.principle-chip:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--chip-color, var(--sn-violet)) 60%, var(--sn-stroke));
+  background: rgba(57, 50, 102, 0.7);
+}
+.principle-chip-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px var(--chip-color, var(--sn-violet)));
+}
+.principle-chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+.principle-chip-name {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--sn-text);
+}
+.principle-chip-phrase {
+  font-family: var(--sn-font-body);
+  font-size: 11px;
+  color: var(--sn-text-3);
+}
+@media (max-width: 540px) {
+  .principles-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 4px 12px 8px;
+    margin: 4px -12px 0;
+    scrollbar-width: none;
+  }
+  .principles-row::-webkit-scrollbar { display: none; }
+  .principle-chip { flex-shrink: 0; }
+}
+
+/* CTA cultural caption underneath JUGAR */
+.start-cta-sub {
+  font-family: var(--sn-font-body);
+  font-size: 12px;
+  color: var(--sn-text-3);
+  letter-spacing: 1px;
+  margin-top: -8px;
+  text-transform: uppercase;
+}
+
+/* ─── HUD · cultural extensions ─────────────────────────────── */
+.hud-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding: 6px 12px 0;
+}
+.hud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--sn-radius-chip);
+  background: rgba(31, 23, 50, 0.85);
+  border: 1px solid var(--chip-color, var(--sn-violet));
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sn-text);
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--chip-color, var(--sn-violet)) 35%, transparent);
+}
+.hud-chip-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.hud-chip-time {
+  color: var(--sn-text-3);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-left: 2px;
+}
+.hud-rotator {
+  width: 100%;
+  text-align: center;
+  font-family: var(--sn-font-body);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--sn-text-3);
+  padding: 4px 12px 6px;
+  min-height: 14px;
+  transition: opacity 260ms ease;
+}
+.hud-rotator strong {
+  color: var(--sn-text-2);
+  font-weight: 600;
+}
+
+/* ─── Toasts · educational vs compact ───────────────────────── */
+.powerup-toast--educational {
+  padding: 12px 22px;
+  max-width: min(86%, 420px);
+}
+.powerup-toast--compact {
+  padding: 8px 16px;
+}
+.powerup-toast-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--sn-text, #fff);
+  line-height: 1.15;
+}
+.powerup-toast-subtitle {
+  font-family: var(--sn-font-body, var(--font-body));
+  font-size: 11px;
+  color: var(--sn-text-2, #a0a0c8);
+  line-height: 1.35;
+  margin-top: 3px;
+  opacity: 0.85;
+}
+.powerup-toast-mode {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--sn-text);
+  line-height: 1.15;
+}
+.powerup-toast-quote {
+  font-family: var(--sn-font-body);
+  font-size: 12px;
+  color: var(--sn-text-2);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.powerup-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+/* ─── GameOver · cultural hero ──────────────────────────────── */
+.gameover-hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+.gameover-hero-eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--sn-text-3);
+  text-transform: uppercase;
+}
+.gameover-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 4vw, 22px);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--sn-text);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.gameover-hero-sub {
+  font-family: var(--sn-font-body);
+  font-size: 12px;
+  color: var(--sn-text-2);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+/* Dominant principle card */
+.dominant-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--sn-radius-card);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--dom-color, var(--sn-violet)) 22%, transparent),
+    rgba(31, 23, 50, 0.7)
+  );
+  border: 1px solid color-mix(in srgb, var(--dom-color, var(--sn-violet)) 55%, var(--sn-stroke));
+  box-shadow: 0 0 22px
+    color-mix(in srgb, var(--dom-color, var(--sn-violet)) 28%, transparent);
+}
+.dominant-card-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px var(--dom-color, var(--sn-violet)));
+}
+.dominant-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.dominant-card-eyebrow {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--sn-text-3);
+  text-transform: uppercase;
+}
+.dominant-card-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--sn-text);
+  line-height: 1.1;
+}
+.dominant-card-quote {
+  font-family: var(--sn-font-body);
+  font-size: 11px;
+  color: var(--sn-text-2);
+  line-height: 1.35;
+}
+
+/* "Gracias" badge */
+.gracias-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--sn-radius-chip);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 209, 102, 0.15),
+    rgba(160, 53, 139, 0.15)
+  );
+  border: 1px solid var(--sn-amber);
+  color: var(--sn-text);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 0 18px rgba(255, 209, 102, 0.25);
+}
+.gracias-badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sn-amber);
+  box-shadow: 0 0 8px var(--sn-amber);
+}
+.gracias-badge-text small {
+  display: block;
+  font-family: var(--sn-font-body);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--sn-text-3);
+  letter-spacing: 0.5px;
+  text-transform: none;
+  margin-top: 1px;
+}
+
+.gameover-stats-impact {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sn-amber, var(--orange));
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+
+/* ─── Principles Modal ──────────────────────────────────────── */
+.start-principles-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.start-principles-link:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.principles-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(7, 7, 26, 0.88);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+}
+.principles-modal {
+  background: var(--surface);
+  border: 1px solid rgba(233, 30, 140, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px 28px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: visible;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), var(--glow-pitaya);
+}
+.principles-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+.principles-modal-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 4px;
+  background: linear-gradient(90deg, var(--pitaya-light), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.principles-modal-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 20px;
+}
+.principles-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.principles-modal-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid color-mix(in srgb, var(--card-color) 30%, transparent);
+}
+.principles-modal-card-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px var(--card-color));
+}
+.principles-modal-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.principles-modal-card-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--card-color);
+}
+.principles-modal-card-mode {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.principles-modal-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+.principles-modal-cta {
+  margin-top: 20px;
+  width: 100%;
+}
+
+/* ─── Active Effects Bar (power-up chips overlay) ───────────── */
+.active-effects-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.active-effect-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.active-effect-spinner-wrap {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+.active-effect-spinner {
+  position: absolute;
+  inset: 0;
+}
+
+.active-effect-icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px var(--eff-color, #fff));
+}
+
+.active-effect-secs {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--eff-color, #fff);
+  text-shadow: 0 0 6px var(--eff-color, #fff);
+  line-height: 1;
+}
+
+/* Pause button icon-only style */
+.pause-toggle-btn--icon {
+  min-width: 38px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Game Over Staged Flow ─────────────────────────────────── */
+.gameover-stage1 {
+  text-align: center;
+}
+.gameover-stage2 {
+  margin-top: 16px;
+}
+.gameover-stats-mode {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.dominant-card-mode {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

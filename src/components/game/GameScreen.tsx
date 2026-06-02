@@ -1,16 +1,18 @@
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   BACKGROUND_IMAGE,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  POWERUP_COLORS,
-  POWERUP_IMAGES,
-  POWERUP_LABELS,
+  PRINCIPLES,
+  PRINCIPLES_ORDER,
 } from "../../game/constants";
 import { useBreakoutGame } from "../../hooks/useBreakoutGame";
 import { HUD } from "./HUD";
 import { PauseScreen } from "./PauseScreen";
 import { GameOverScreen } from "../screens/GameOverScreen";
+import { ActiveEffectsBar } from "./ActiveEffectsBar";
+
+const SEEN_PRINCIPLES_KEY = "tuenti-breakout-principles-seen";
 
 interface Props {
   onGoToMenu: () => void;
@@ -21,6 +23,15 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { uiState, startGame, toasts, isPaused, resumeGame, togglePause } =
     useBreakoutGame(canvasRef);
+
+  const [showPrinciples, setShowPrinciples] = useState(() => {
+    return !localStorage.getItem(SEEN_PRINCIPLES_KEY);
+  });
+
+  const closePrinciples = () => {
+    localStorage.setItem(SEEN_PRINCIPLES_KEY, "1");
+    setShowPrinciples(false);
+  };
 
   // Auto-start when component mounts
   useEffect(() => {
@@ -34,6 +45,8 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
     powerUpsMissedMap: uiState.powerUpsMissedMap,
     bricksBroken: uiState.bricksBroken,
     bricksRemaining: uiState.bricksRemaining,
+    principleStats: uiState.principleStats,
+    graciasMoment: uiState.graciasMoment,
   };
 
   return (
@@ -48,6 +61,7 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
         score={uiState.score}
         level={uiState.level}
         highScore={uiState.highScore}
+        activeEffects={uiState.activeEffects}
       />
 
       <div className="canvas-area">
@@ -62,47 +76,75 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
           {uiState.phase !== "gameover" && (
             <button
               type="button"
-              className="pause-toggle-btn"
+              className="pause-toggle-btn pause-toggle-btn--icon"
+              aria-label={isPaused ? "Reanudar" : "Pausar"}
               onClick={togglePause}
             >
-              {isPaused ? "SEGUIR" : "PAUSA"}
+              {isPaused ? (
+                // Play triangle
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                  <polygon points="3,1 13,7 3,13" />
+                </svg>
+              ) : (
+                // Pause two bars
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true">
+                  <rect x="0" y="0" width="4" height="14" rx="1" />
+                  <rect x="8" y="0" width="4" height="14" rx="1" />
+                </svg>
+              )}
             </button>
           )}
 
-          {/* Floating powerup toasts */}
-          <div className="powerup-toasts">
+          {uiState.phase !== "gameover" && (
+            <ActiveEffectsBar activeEffects={uiState.activeEffects ?? []} />
+          )}
+
+          {/* Cultural power-up toasts: educative on first catch, compact on repeats. */}
+          <div className="powerup-toasts" aria-live="polite">
             {toasts.map((toast) => {
-              const color = POWERUP_COLORS[toast.type] ?? "#fff";
-              const image = POWERUP_IMAGES[toast.type];
-              const label = POWERUP_LABELS[toast.type] ?? "?";
-              const lines = label.split("\n");
+              const p = PRINCIPLES[toast.type];
+              if (!p) return null;
+              const isFirst = toast.count <= 1;
               const pulseClass =
                 toast.pulseKey > 0
                   ? `powerup-toast--pulse-${toast.pulseKey % 2}`
                   : "";
+              const variantClass = isFirst
+                ? "powerup-toast--educational"
+                : "powerup-toast--compact";
               return (
                 <div
                   key={toast.id}
                   className={[
                     "powerup-toast",
+                    variantClass,
                     pulseClass,
                     toast.closing ? "powerup-toast--closing" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  style={{ "--toast-color": color } as CSSProperties}
+                  style={{ "--toast-color": p.color } as CSSProperties}
                 >
                   <img
-                    src={image}
-                    alt={lines.join(" ")}
+                    src={p.image}
+                    alt=""
+                    aria-hidden="true"
                     className="powerup-toast-img"
                   />
-                  <span className="powerup-toast-name">
-                    {lines.map((line, i) => (
-                      <span key={i} className="powerup-toast-line">
-                        {line}
+                  <span className="powerup-toast-body">
+                    <span className="powerup-toast-title">
+                      {p.shortLabel}
+                    </span>
+                    {isFirst && (
+                      <span className="powerup-toast-subtitle">
+                        {p.modeName} · {p.description}
                       </span>
-                    ))}
+                    )}
+                    {!isFirst && (
+                      <span className="powerup-toast-subtitle">
+                        {p.modeName}
+                      </span>
+                    )}
                   </span>
                   {toast.count > 1 && (
                     <span className="powerup-toast-count">x{toast.count}</span>
@@ -137,6 +179,68 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
           )}
         </div>
       </div>
+
+      {/* Principles intro modal — shown once before first launch */}
+      {showPrinciples && (
+        <div className="principles-backdrop" onClick={closePrinciples}>
+          <div
+            className="principles-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="principles-modal-close"
+              onClick={closePrinciples}
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+            <h2 className="principles-modal-title">
+              Nuestra cultura, tu gameplay
+            </h2>
+            <p className="principles-modal-sub">
+              Cada power-up representa un principio Supernova.
+            </p>
+            <div className="principles-modal-list">
+              {PRINCIPLES_ORDER.map((code) => {
+                const p = PRINCIPLES[code];
+                return (
+                  <div
+                    key={code}
+                    className="principles-modal-card"
+                    style={
+                      { ["--card-color" as string]: p.color } as CSSProperties
+                    }
+                  >
+                    <img
+                      src={p.image}
+                      alt=""
+                      aria-hidden="true"
+                      className="principles-modal-card-img"
+                    />
+                    <div className="principles-modal-card-text">
+                      <span className="principles-modal-card-title">
+                        {p.shortLabel}
+                      </span>
+                      <span className="principles-modal-card-mode">
+                        {p.modeName}
+                      </span>
+                      <span className="principles-modal-card-desc">
+                        {p.description}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              className="btn btn--primary principles-modal-cta"
+              onClick={closePrinciples}
+            >
+              ¡A JUGAR!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

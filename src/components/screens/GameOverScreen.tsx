@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import gsap from "gsap";
 import { soundEngine } from "../../game/sound";
 import {
@@ -173,7 +179,14 @@ export function GameOverScreen({
         gsap.fromTo(
           dominantCardRef.current,
           { y: 20, opacity: 0, scale: 0.9 },
-          { y: 0, opacity: 1, scale: 1, duration: 0.5, delay: 0.9, ease: "back.out(1.4)" },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.5,
+            delay: 0.9,
+            ease: "back.out(1.4)",
+          },
         );
       }
     }, rootRef);
@@ -343,8 +356,7 @@ export function GameOverScreen({
                 const p = PRINCIPLES[type];
                 const caught = stats.powerUpsCaughtMap?.[type] ?? 0;
                 const missed = stats.powerUpsMissedMap?.[type] ?? 0;
-                const impact =
-                  stats.principleStats?.[type]?.impactScore ?? 0;
+                const impact = stats.principleStats?.[type]?.impactScore ?? 0;
                 if (caught === 0 && missed === 0) return null;
                 return (
                   <div key={type} className="gameover-stats-row">
@@ -354,18 +366,12 @@ export function GameOverScreen({
                       aria-hidden="true"
                       className="gameover-stats-pu-icon gameover-stats-pu-img"
                     />
-                    <span className="gameover-stats-label">
-                      {p.shortLabel}
-                    </span>
-                    <span className="gameover-stats-mode">
-                      {p.modeName}
-                    </span>
+                    <span className="gameover-stats-label">{p.shortLabel}</span>
+                    <span className="gameover-stats-mode">{p.modeName}</span>
                     <span className="gameover-stats-caught">✓ {caught}</span>
                     <span className="gameover-stats-missed">✕ {missed}</span>
                     {impact > 0 && (
-                      <span className="gameover-stats-impact">
-                        +{impact}
-                      </span>
+                      <span className="gameover-stats-impact">+{impact}</span>
                     )}
                   </div>
                 );

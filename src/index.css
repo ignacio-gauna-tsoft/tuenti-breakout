@@ -68,9 +68,9 @@ body {
   justify-content: center;
   isolation: isolate;
   background: #07071a;
-  padding:
-    max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
   overflow: hidden;
 }
 
@@ -80,8 +80,8 @@ body {
   inset: -6%;
   z-index: 0;
   pointer-events: none;
-  background: var(--start-background-image, var(--game-background-image)) center /
-    cover no-repeat;
+  background: var(--start-background-image, var(--game-background-image))
+    center / cover no-repeat;
   animation: nebulaDrift 24s ease-in-out infinite alternate;
   transform-origin: center;
 }
@@ -93,14 +93,46 @@ body {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.9) 0 1px, transparent 2px),
-    radial-gradient(circle at 72% 12%, rgba(170, 180, 255, 0.85) 0 1px, transparent 2px),
-    radial-gradient(circle at 36% 42%, rgba(255, 255, 255, 0.7) 0 1px, transparent 2px),
-    radial-gradient(circle at 80% 54%, rgba(210, 120, 255, 0.8) 0 1px, transparent 2px),
-    radial-gradient(circle at 12% 68%, rgba(255, 255, 255, 0.75) 0 1px, transparent 2px),
-    radial-gradient(circle at 58% 82%, rgba(160, 200, 255, 0.8) 0 1px, transparent 2px),
-    radial-gradient(ellipse at 78% 82%, rgba(255, 70, 190, 0.36), transparent 34%),
-    radial-gradient(ellipse at 68% 76%, rgba(142, 70, 255, 0.42), transparent 38%),
+    radial-gradient(
+      circle at 18% 18%,
+      rgba(255, 255, 255, 0.9) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 72% 12%,
+      rgba(170, 180, 255, 0.85) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 36% 42%,
+      rgba(255, 255, 255, 0.7) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 80% 54%,
+      rgba(210, 120, 255, 0.8) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 12% 68%,
+      rgba(255, 255, 255, 0.75) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 58% 82%,
+      rgba(160, 200, 255, 0.8) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      ellipse at 78% 82%,
+      rgba(255, 70, 190, 0.36),
+      transparent 34%
+    ),
+    radial-gradient(
+      ellipse at 68% 76%,
+      rgba(142, 70, 255, 0.42),
+      transparent 38%
+    ),
     linear-gradient(rgba(7, 7, 26, 0.1), rgba(7, 7, 26, 0.28));
   background-size:
     280px 280px,
@@ -1301,7 +1333,8 @@ body {
   letter-spacing: 0;
   line-height: 1;
   text-shadow: 0 0 8px var(--toast-color, #fff);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--toast-color, #fff) 45%, transparent);
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--toast-color, #fff) 45%, transparent);
 }
 
 .powerup-toast-line {
@@ -1324,19 +1357,22 @@ body {
     transform: scale(1);
     box-shadow:
       0 0 20px color-mix(in srgb, var(--toast-color, #fff) 40%, transparent),
-      inset 0 0 16px color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
+      inset 0 0 16px
+        color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
   }
   42% {
     transform: scale(1.12);
     box-shadow:
       0 0 34px color-mix(in srgb, var(--toast-color, #fff) 70%, transparent),
-      inset 0 0 22px color-mix(in srgb, var(--toast-color, #fff) 18%, transparent);
+      inset 0 0 22px
+        color-mix(in srgb, var(--toast-color, #fff) 18%, transparent);
   }
   100% {
     transform: scale(1);
     box-shadow:
       0 0 20px color-mix(in srgb, var(--toast-color, #fff) 40%, transparent),
-      inset 0 0 16px color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
+      inset 0 0 16px
+        color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
   }
 }
 
@@ -1345,19 +1381,22 @@ body {
     transform: scale(1);
     box-shadow:
       0 0 20px color-mix(in srgb, var(--toast-color, #fff) 40%, transparent),
-      inset 0 0 16px color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
+      inset 0 0 16px
+        color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
   }
   42% {
     transform: scale(1.12);
     box-shadow:
       0 0 34px color-mix(in srgb, var(--toast-color, #fff) 70%, transparent),
-      inset 0 0 22px color-mix(in srgb, var(--toast-color, #fff) 18%, transparent);
+      inset 0 0 22px
+        color-mix(in srgb, var(--toast-color, #fff) 18%, transparent);
   }
   100% {
     transform: scale(1);
     box-shadow:
       0 0 20px color-mix(in srgb, var(--toast-color, #fff) 40%, transparent),
-      inset 0 0 16px color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
+      inset 0 0 16px
+        color-mix(in srgb, var(--toast-color, #fff) 8%, transparent);
   }
 }
 
@@ -1506,29 +1545,27 @@ body {
    ════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --sn-bg-900: #1F1732;
-  --sn-bg-800: #261B44;
-  --sn-surface-700: #30274F;
+  --sn-bg-900: #1f1732;
+  --sn-bg-800: #261b44;
+  --sn-surface-700: #30274f;
   --sn-surface-600: #393266;
-  --sn-stroke: #6B5A94;
+  --sn-stroke: #6b5a94;
   --sn-stroke-soft: rgba(107, 90, 148, 0.35);
-  --sn-brand: #A0358B;
-  --sn-brand-hover: #B73589;
-  --sn-violet: #7B5DC7;
-  --sn-mint: #54E4C1;
-  --sn-cyan: #56C7FF;
-  --sn-amber: #FFD166;
-  --sn-text: #F7F2FF;
-  --sn-text-2: #CFC3E8;
-  --sn-text-3: #A99DBE;
+  --sn-brand: #a0358b;
+  --sn-brand-hover: #b73589;
+  --sn-violet: #7b5dc7;
+  --sn-mint: #54e4c1;
+  --sn-cyan: #56c7ff;
+  --sn-amber: #ffd166;
+  --sn-text: #f7f2ff;
+  --sn-text-2: #cfc3e8;
+  --sn-text-3: #a99dbe;
   --sn-radius-card: 18px;
   --sn-radius-chip: 999px;
   --sn-shadow-card:
-    0 4px 18px rgba(0, 0, 0, 0.35),
-    0 0 0 1px var(--sn-stroke-soft),
+    0 4px 18px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--sn-stroke-soft),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --sn-font-body:
-    "Sora", "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --sn-font-body: "Sora", "Space Grotesk", system-ui, -apple-system, sans-serif;
 }
 
 /* Slightly warmer plum background instead of near-black */
@@ -1620,7 +1657,11 @@ body {
 }
 .principle-chip:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--chip-color, var(--sn-violet)) 60%, var(--sn-stroke));
+  border-color: color-mix(
+    in srgb,
+    var(--chip-color, var(--sn-violet)) 60%,
+    var(--sn-stroke)
+  );
   background: rgba(57, 50, 102, 0.7);
 }
 .principle-chip-icon {
@@ -1657,8 +1698,12 @@ body {
     margin: 4px -12px 0;
     scrollbar-width: none;
   }
-  .principles-row::-webkit-scrollbar { display: none; }
-  .principle-chip { flex-shrink: 0; }
+  .principles-row::-webkit-scrollbar {
+    display: none;
+  }
+  .principle-chip {
+    flex-shrink: 0;
+  }
 }
 
 /* CTA cultural caption underneath JUGAR */
@@ -1814,7 +1859,8 @@ body {
     color-mix(in srgb, var(--dom-color, var(--sn-violet)) 22%, transparent),
     rgba(31, 23, 50, 0.7)
   );
-  border: 1px solid color-mix(in srgb, var(--dom-color, var(--sn-violet)) 55%, var(--sn-stroke));
+  border: 1px solid
+    color-mix(in srgb, var(--dom-color, var(--sn-violet)) 55%, var(--sn-stroke));
   box-shadow: 0 0 22px
     color-mix(in srgb, var(--dom-color, var(--sn-violet)) 28%, transparent);
 }
@@ -1942,7 +1988,9 @@ body {
   max-height: 92vh;
   overflow-y: visible;
   position: relative;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), var(--glow-pitaya);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    var(--glow-pitaya);
 }
 .principles-modal-close {
   position: absolute;
@@ -2100,6 +2148,10 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

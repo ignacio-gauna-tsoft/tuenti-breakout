@@ -53,7 +53,9 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
     <div
       className="game-screen"
       style={
-        { "--game-background-image": `url("${BACKGROUND_IMAGE}")` } as CSSProperties
+        {
+          "--game-background-image": `url("${BACKGROUND_IMAGE}")`,
+        } as CSSProperties
       }
     >
       <HUD
@@ -82,12 +84,24 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
             >
               {isPaused ? (
                 // Play triangle
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
                   <polygon points="3,1 13,7 3,13" />
                 </svg>
               ) : (
                 // Pause two bars
-                <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true">
+                <svg
+                  width="12"
+                  height="14"
+                  viewBox="0 0 12 14"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
                   <rect x="0" y="0" width="4" height="14" rx="1" />
                   <rect x="8" y="0" width="4" height="14" rx="1" />
                 </svg>
@@ -132,9 +146,7 @@ export function GameScreen({ onGoToMenu, playerName }: Props) {
                     className="powerup-toast-img"
                   />
                   <span className="powerup-toast-body">
-                    <span className="powerup-toast-title">
-                      {p.shortLabel}
-                    </span>
+                    <span className="powerup-toast-title">{p.shortLabel}</span>
                     {isFirst && (
                       <span className="powerup-toast-subtitle">
                         {p.modeName} · {p.description}

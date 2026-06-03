@@ -212,8 +212,7 @@ export const PRINCIPLES: Record<PowerUpType, PrincipleMeta> = {
     modeName: "Turbo Cambio",
     description: "Nos animamos a cambiar para crecer.",
     effectLabel: "Fireball transformadora.",
-    educationalCopy:
-      "Turbo Cambio · Nos animamos a cambiar para crecer.",
+    educationalCopy: "Turbo Cambio · Nos animamos a cambiar para crecer.",
     extendedCopy:
       "Cambiar da vértigo, pero abre camino: probar con criterio también es avanzar.",
     rotatorTip: "Valentía: probar con criterio también es avanzar.",
@@ -230,8 +229,7 @@ export const PRINCIPLES: Record<PowerUpType, PrincipleMeta> = {
     effectLabel: "Estela, marca y combo de legado.",
     educationalCopy:
       "Modo Legado · Construimos un camino que inspira y hace la diferencia.",
-    extendedCopy:
-      "No alcanza con pasar: buscamos dejar algo mejor que antes.",
+    extendedCopy: "No alcanza con pasar: buscamos dejar algo mejor que antes.",
     rotatorTip: "Dejás Huella: dejamos algo mejor que antes.",
     color: "#00E5A0",
     accentColor: "#7DFFD3",
